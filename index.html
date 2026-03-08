@@ -1,87 +1,90 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Device Dashboard</title>
-
+<title>Repair Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-
 body{
 font-family:Arial;
-background:#f5f6fa;
-margin:20px;
+background:#f4f6fb;
+margin:0;
+padding:20px;
 }
 
-h2{
-margin-bottom:10px;
+h1{
+text-align:center;
 }
 
-.top{
+.container{
 display:flex;
 gap:20px;
+flex-wrap:wrap;
 }
 
-.chart{
+.card{
 background:white;
 padding:20px;
 border-radius:10px;
-box-shadow:0 2px 6px rgba(0,0,0,0.1);
-width:50%;
-}
-
-.tablebox{
-margin-top:20px;
-background:white;
-padding:20px;
-border-radius:10px;
-box-shadow:0 2px 6px rgba(0,0,0,0.1);
-height:400px;
-overflow:auto;
-}
-
-.filters{
-margin-bottom:15px;
-}
-
-select,input{
-padding:6px;
-margin-right:10px;
+box-shadow:0 2px 8px rgba(0,0,0,0.1);
+flex:1;
+min-width:250px;
 }
 
 table{
 width:100%;
 border-collapse:collapse;
+margin-top:20px;
+background:white;
+}
+
+th,td{
+padding:8px;
+border:1px solid #ddd;
+text-align:center;
 }
 
 th{
-background:#1976d2;
+background:#3f51b5;
 color:white;
-padding:8px;
 }
 
-td{
+input,select,button{
 padding:6px;
-border-bottom:1px solid #ddd;
+margin:4px;
 }
 
-</style>
+button{
+background:#3f51b5;
+color:white;
+border:none;
+cursor:pointer;
+}
 
+.tabs button{
+background:#eee;
+color:black;
+}
+
+.tabs button.active{
+background:#3f51b5;
+color:white;
+}
+</style>
 </head>
 
 <body>
 
-<h2>Device Status Dashboard</h2>
+<h1>Repair Dashboard</h1>
 
-<div class="filters">
+<div class="container">
 
-Date
-<input type="date" id="dateFilter">
+<div class="card">
+<h3>Add Record</h3>
 
-Checked By
+<input type="date" id="date">
 
-<select id="nameFilter">
-<option value="">All</option>
+<select id="name">
 <option>Navya Shree</option>
 <option>Sravani</option>
 <option>Harshitha</option>
@@ -89,154 +92,169 @@ Checked By
 <option>Sravya</option>
 </select>
 
-<button onclick="filter()">Filter</button>
+<select id="repaired">
+<option>Navya Shree</option>
+<option>Sravani</option>
+<option>Harshitha</option>
+<option>Saniya</option>
+<option>Sravya</option>
+</select>
+
+<select id="qc">
+<option>Navya Shree</option>
+<option>Sravani</option>
+<option>Harshitha</option>
+<option>Saniya</option>
+<option>Sravya</option>
+</select>
+
+<select id="work">
+<option>Repair</option>
+<option>Testing</option>
+<option>Assembly</option>
+</select>
+
+<input type="text" id="remarks" placeholder="Remarks">
+
+<button onclick="addData()">Add</button>
 
 </div>
 
-<div class="top">
-
-<div class="chart">
-<h3>Count of Status by Type of Item</h3>
-<canvas id="typeChart"></canvas>
-</div>
-
-<div class="chart">
-<h3>Status Distribution</h3>
-<canvas id="statusChart"></canvas>
+<div class="card">
+<canvas id="chart"></canvas>
 </div>
 
 </div>
 
-<div class="tablebox">
+<br>
+
+<div>
+Filter Date
+<input type="date" id="filterDate" onchange="loadData()">
+
+Filter Name
+<select id="filterName" onchange="loadData()">
+<option value="">All</option>
+<option>Navya Shree</option>
+<option>Sravani</option>
+<option>Harshitha</option>
+<option>Saniya</option>
+<option>Sravya</option>
+</select>
+</div>
+
+<br>
+
+<div class="tabs">
+<button onclick="showTab('all')" class="active">All</button>
+<button onclick="showTab('repaired')">Repaired By</button>
+<button onclick="showTab('qc')">QC By</button>
+<button onclick="showTab('work')">Work Done By</button>
+</div>
 
 <table id="table">
-
+<thead>
 <tr>
 <th>Date</th>
-<th>Serial No</th>
-<th>Type</th>
-<th>Status</th>
-<th>Checked By</th>
+<th>Name</th>
+<th>Repaired By</th>
+<th>QC By</th>
+<th>Work Done</th>
+<th>Remarks</th>
 </tr>
-
-<tr>
-<td>2026-03-02</td>
-<td>27513</td>
-<td>Camera</td>
-<td>Working</td>
-<td>Navya</td>
-</tr>
-
-<tr>
-<td>2026-03-02</td>
-<td>27836</td>
-<td>LPU</td>
-<td>Not working</td>
-<td>Sravani</td>
-</tr>
-
-<tr>
-<td>2026-03-02</td>
-<td>87347</td>
-<td>LPU</td>
-<td>Not working</td>
-<td>Harshitha</td>
-</tr>
-
-<tr>
-<td>2026-03-02</td>
-<td>604</td>
-<td>LPU</td>
-<td>Working</td>
-<td>Sravya</td>
-</tr>
-
-<tr>
-<td>2026-03-02</td>
-<td>187</td>
-<td>IC Card</td>
-<td>Working</td>
-<td>Saniya</td>
-</tr>
-
+</thead>
+<tbody></tbody>
 </table>
-
-</div>
 
 <script>
 
-new Chart(document.getElementById("typeChart"),{
+let data = JSON.parse(localStorage.getItem("repairData")) || []
 
-type:"doughnut",
+function addData(){
 
+let record={
+date:document.getElementById("date").value,
+name:document.getElementById("name").value,
+repaired:document.getElementById("repaired").value,
+qc:document.getElementById("qc").value,
+work:document.getElementById("work").value,
+remarks:document.getElementById("remarks").value
+}
+
+data.push(record)
+
+localStorage.setItem("repairData",JSON.stringify(data))
+
+loadData()
+updateChart()
+
+}
+
+function loadData(){
+
+let tbody=document.querySelector("#table tbody")
+tbody.innerHTML=""
+
+let fDate=document.getElementById("filterDate").value
+let fName=document.getElementById("filterName").value
+
+data.forEach(d=>{
+
+if(fDate && d.date!=fDate) return
+if(fName && d.name!=fName) return
+
+let row=`<tr>
+<td>${d.date}</td>
+<td>${d.name}</td>
+<td>${d.repaired}</td>
+<td>${d.qc}</td>
+<td>${d.work}</td>
+<td>${d.remarks}</td>
+</tr>`
+
+tbody.innerHTML+=row
+
+})
+
+}
+
+function showTab(type){
+
+document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"))
+event.target.classList.add("active")
+
+}
+
+function updateChart(){
+
+let counts={}
+
+data.forEach(d=>{
+counts[d.name]=(counts[d.name]||0)+1
+})
+
+chart.data.labels=Object.keys(counts)
+chart.data.datasets[0].data=Object.values(counts)
+chart.update()
+
+}
+
+let ctx=document.getElementById("chart")
+
+let chart=new Chart(ctx,{
+type:"bar",
 data:{
-
-labels:["LPU","Green PCB","Camera","IC Card","Dashboard","Display"],
-
+labels:[],
 datasets:[{
-
-data:[8,6,3,2,1,1],
-
-backgroundColor:[
-"#6a1b9a",
-"#1e88e5",
-"#fbc02d",
-"#e53935",
-"#ec407a",
-"#9575cd"
-]
-
+label:"Work Count",
+data:[],
+backgroundColor:["#ff6384","#36a2eb","#ffce56","#4caf50","#9c27b0"]
 }]
-
 }
-
 })
 
-new Chart(document.getElementById("statusChart"),{
-
-type:"pie",
-
-data:{
-
-labels:["Working","Not working","In progress"],
-
-datasets:[{
-
-data:[10,4,1],
-
-backgroundColor:[
-"#4caf50",
-"#f44336",
-"#ff9800"
-]
-
-}]
-
-}
-
-})
-
-function filter(){
-
-let date=document.getElementById("dateFilter").value
-let name=document.getElementById("nameFilter").value
-
-let rows=document.querySelectorAll("#table tr")
-
-rows.forEach((row,i)=>{
-
-if(i==0)return
-
-let rdate=row.cells[0].innerText
-let rname=row.cells[4].innerText
-
-row.style.display=
-(!date||rdate==date)&&(!name||rname==name)
-?"":"none"
-
-})
-
-}
+loadData()
+updateChart()
 
 </script>
 
