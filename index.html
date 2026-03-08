@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-
 <title>Device Dashboard</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -10,41 +9,42 @@
 
 body{
 font-family:Arial;
-background:#f3f3f3;
+background:#f5f6fa;
 margin:20px;
 }
 
 h2{
-margin-bottom:20px;
+margin-bottom:10px;
 }
 
-.dashboard{
-display:grid;
-grid-template-columns: 40% 60%;
-grid-gap:20px;
+.top{
+display:flex;
+gap:20px;
 }
 
-.chartbox{
+.chart{
 background:white;
 padding:20px;
 border-radius:10px;
-box-shadow:0 2px 8px rgba(0,0,0,0.1);
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+width:50%;
 }
 
 .tablebox{
+margin-top:20px;
 background:white;
 padding:20px;
 border-radius:10px;
-box-shadow:0 2px 8px rgba(0,0,0,0.1);
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
 height:400px;
 overflow:auto;
 }
 
 .filters{
-margin-bottom:20px;
+margin-bottom:15px;
 }
 
-input,select{
+select,input{
 padding:6px;
 margin-right:10px;
 }
@@ -71,43 +71,49 @@ border-bottom:1px solid #ddd;
 
 <body>
 
-<h2>Project Status Dashboard</h2>
+<h2>Device Status Dashboard</h2>
 
 <div class="filters">
 
-Date  
+Date
 <input type="date" id="dateFilter">
 
 Checked By
 
 <select id="nameFilter">
 <option value="">All</option>
-<option>Navya</option>
-<option>Shree</option>
+<option>Navya Shree</option>
 <option>Sravani</option>
 <option>Harshitha</option>
 <option>Saniya</option>
 <option>Sravya</option>
 </select>
 
-<button onclick="filterTable()">Filter</button>
+<button onclick="filter()">Filter</button>
 
 </div>
 
-<div class="dashboard">
+<div class="top">
 
-<div class="chartbox">
+<div class="chart">
 <h3>Count of Status by Type of Item</h3>
-<canvas id="pieChart"></canvas>
+<canvas id="typeChart"></canvas>
+</div>
+
+<div class="chart">
+<h3>Status Distribution</h3>
+<canvas id="statusChart"></canvas>
+</div>
+
 </div>
 
 <div class="tablebox">
 
-<table id="dataTable">
+<table id="table">
 
 <tr>
 <th>Date</th>
-<th>Serial</th>
+<th>Serial No</th>
 <th>Type</th>
 <th>Status</th>
 <th>Checked By</th>
@@ -125,7 +131,7 @@ Checked By
 <td>2026-03-02</td>
 <td>27836</td>
 <td>LPU</td>
-<td>Not Working</td>
+<td>Not working</td>
 <td>Sravani</td>
 </tr>
 
@@ -133,24 +139,44 @@ Checked By
 <td>2026-03-02</td>
 <td>87347</td>
 <td>LPU</td>
-<td>Not Working</td>
+<td>Not working</td>
 <td>Harshitha</td>
+</tr>
+
+<tr>
+<td>2026-03-02</td>
+<td>604</td>
+<td>LPU</td>
+<td>Working</td>
+<td>Sravya</td>
+</tr>
+
+<tr>
+<td>2026-03-02</td>
+<td>187</td>
+<td>IC Card</td>
+<td>Working</td>
+<td>Saniya</td>
 </tr>
 
 </table>
 
 </div>
 
-</div>
-
 <script>
 
-new Chart(document.getElementById("pieChart"),{
+new Chart(document.getElementById("typeChart"),{
+
 type:"doughnut",
+
 data:{
+
 labels:["LPU","Green PCB","Camera","IC Card","Dashboard","Display"],
+
 datasets:[{
+
 data:[8,6,3,2,1,1],
+
 backgroundColor:[
 "#6a1b9a",
 "#1e88e5",
@@ -159,16 +185,43 @@ backgroundColor:[
 "#ec407a",
 "#9575cd"
 ]
+
 }]
+
 }
+
 })
 
-function filterTable(){
+new Chart(document.getElementById("statusChart"),{
+
+type:"pie",
+
+data:{
+
+labels:["Working","Not working","In progress"],
+
+datasets:[{
+
+data:[10,4,1],
+
+backgroundColor:[
+"#4caf50",
+"#f44336",
+"#ff9800"
+]
+
+}]
+
+}
+
+})
+
+function filter(){
 
 let date=document.getElementById("dateFilter").value
 let name=document.getElementById("nameFilter").value
 
-let rows=document.querySelectorAll("#dataTable tr")
+let rows=document.querySelectorAll("#table tr")
 
 rows.forEach((row,i)=>{
 
