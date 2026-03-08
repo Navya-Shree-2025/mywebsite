@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <title>Repair Dashboard</title>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
 
@@ -15,60 +18,52 @@ padding:20px;
 
 h1{
 text-align:center;
-margin-bottom:10px;
 }
 
-.container{
-display:flex;
-gap:15px;
-flex-wrap:wrap;
-justify-content:space-between;
-}
-
-.card{
-background:white;
-border-radius:8px;
-padding:15px;
-box-shadow:0 2px 6px rgba(0,0,0,0.1);
-}
-
-.form-card{
-width:100%;
-}
-
-.chart-card{
-width:300px;
-height:200px;
-}
-
-.chart-card canvas{
-width:100% !important;
-height:100% !important;
-}
-
-input,select{
-padding:6px;
-margin:4px;
+.upload{
+margin-bottom:20px;
+text-align:center;
 }
 
 button{
-padding:6px 12px;
+padding:8px 15px;
 background:#3f51b5;
 color:white;
 border:none;
 cursor:pointer;
 }
 
+.container{
+display:flex;
+gap:20px;
+flex-wrap:wrap;
+justify-content:center;
+margin-bottom:20px;
+}
+
+.card{
+background:white;
+padding:10px;
+border-radius:8px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+width:280px;
+height:180px;
+}
+
+.card canvas{
+width:100% !important;
+height:100% !important;
+}
+
 table{
 width:100%;
 border-collapse:collapse;
-margin-top:10px;
 background:white;
 }
 
 th,td{
-padding:8px;
 border:1px solid #ddd;
+padding:8px;
 text-align:center;
 }
 
@@ -77,196 +72,110 @@ background:#3f51b5;
 color:white;
 }
 
-.tabs button{
-background:#ddd;
-color:black;
-margin-right:5px;
-}
-
-.tabs button.active{
-background:#3f51b5;
-color:white;
-}
-
-.filters{
-margin-top:10px;
-}
-
 </style>
+
 </head>
 
 <body>
 
 <h1>Repair Dashboard</h1>
 
-<div class="card form-card">
+<div class="upload">
 
-Date
-<input type="date" id="date">
-
-Name
-<select id="name">
-<option>Navya Shree</option>
-<option>Sravani</option>
-<option>Harshitha</option>
-<option>Saniya</option>
-<option>Sravya</option>
-</select>
-
-Repaired By
-<select id="repaired">
-<option>Navya Shree</option>
-<option>Sravani</option>
-<option>Harshitha</option>
-<option>Saniya</option>
-<option>Sravya</option>
-</select>
-
-QC By
-<select id="qc">
-<option>Navya Shree</option>
-<option>Sravani</option>
-<option>Harshitha</option>
-<option>Saniya</option>
-<option>Sravya</option>
-</select>
-
-Work Done By
-<select id="work">
-<option>Repair</option>
-<option>Testing</option>
-<option>Assembly</option>
-</select>
-
-Checked By
-<select id="checked">
-<option>Navya Shree</option>
-<option>Sravani</option>
-<option>Harshitha</option>
-<option>Saniya</option>
-<option>Sravya</option>
-</select>
-
-Remarks
-<input type="text" id="remarks">
-
-<button onclick="addData()">Add</button>
+<input type="file" id="excelFile" accept=".xlsx,.xls">
+<button onclick="uploadExcel()">Upload Excel</button>
 
 </div>
-
-<br>
 
 <div class="container">
 
-<div class="card chart-card">
-<canvas id="nameChart"></canvas>
+<div class="card">
+<canvas id="statusChart"></canvas>
 </div>
 
-<div class="card chart-card">
-<canvas id="repairChart"></canvas>
+<div class="card">
+<canvas id="deviceChart"></canvas>
 </div>
 
-<div class="card chart-card">
-<canvas id="workChart"></canvas>
+<div class="card">
+<canvas id="pcbChart"></canvas>
 </div>
-
-</div>
-
-<div class="filters">
-
-Filter Date
-<input type="date" id="filterDate" onchange="loadData()">
-
-Filter Name
-<select id="filterName" onchange="loadData()">
-<option value="">All</option>
-<option>Navya Shree</option>
-<option>Sravani</option>
-<option>Harshitha</option>
-<option>Saniya</option>
-<option>Sravya</option>
-</select>
 
 </div>
 
-<br>
-
-<div class="tabs">
-<button class="active">All</button>
-<button>Repaired By</button>
-<button>QC By</button>
-<button>Work Done By</button>
-</div>
-
-<table>
+<table id="dataTable">
 
 <thead>
+
 <tr>
-<th>Date</th>
-<th>Name</th>
-<th>Repaired By</th>
-<th>QC By</th>
-<th>Work</th>
-<th>Checked By</th>
-<th>Remarks</th>
+<th>S.no</th>
+<th>Device S.No</th>
+<th>Device Name</th>
+<th>Repaired status</th>
+<th>Details Description</th>
+<th>Date of Repair</th>
+<th>Type of PCB</th>
 </tr>
+
 </thead>
 
-<tbody id="tableBody"></tbody>
+<tbody></tbody>
 
 </table>
 
 <script>
 
-let data = JSON.parse(localStorage.getItem("repairData")) || []
+let tableData=[]
 
-function addData(){
+function uploadExcel(){
 
-let record={
-date:document.getElementById("date").value,
-name:document.getElementById("name").value,
-repaired:document.getElementById("repaired").value,
-qc:document.getElementById("qc").value,
-work:document.getElementById("work").value,
-checked:document.getElementById("checked").value,
-remarks:document.getElementById("remarks").value
-}
+let file=document.getElementById("excelFile").files[0]
 
-data.push(record)
+let reader=new FileReader()
 
-localStorage.setItem("repairData",JSON.stringify(data))
+reader.onload=function(e){
 
-loadData()
+let data=new Uint8Array(e.target.result)
+
+let workbook=XLSX.read(data,{type:"array"})
+
+let sheet=workbook.Sheets[workbook.SheetNames[0]]
+
+let rows=XLSX.utils.sheet_to_json(sheet)
+
+tableData=rows
+
+displayTable()
+
 updateCharts()
 
 }
 
-function loadData(){
+reader.readAsArrayBuffer(file)
 
-let tbody=document.getElementById("tableBody")
-tbody.innerHTML=""
+}
 
-let fDate=document.getElementById("filterDate").value
-let fName=document.getElementById("filterName").value
+function displayTable(){
 
-data.forEach(d=>{
+let body=document.querySelector("#dataTable tbody")
 
-if(fDate && d.date!=fDate) return
-if(fName && d.name!=fName) return
+body.innerHTML=""
+
+tableData.forEach(r=>{
 
 let row=`
 <tr>
-<td>${d.date}</td>
-<td>${d.name}</td>
-<td>${d.repaired}</td>
-<td>${d.qc}</td>
-<td>${d.work}</td>
-<td>${d.checked}</td>
-<td>${d.remarks}</td>
+<td>${r["S.no"]||""}</td>
+<td>${r["Device S.No"]||""}</td>
+<td>${r["Device Name"]||""}</td>
+<td>${r["Repaired status"]||""}</td>
+<td>${r["Details Description"]||""}</td>
+<td>${r["Date of Repair"]||""}</td>
+<td>${r["Type of PCB"]||""}</td>
 </tr>
 `
 
-tbody.innerHTML+=row
+body.innerHTML+=row
 
 })
 
@@ -276,8 +185,12 @@ function countBy(field){
 
 let counts={}
 
-data.forEach(d=>{
-counts[d[field]]=(counts[d[field]]||0)+1
+tableData.forEach(d=>{
+
+let key=d[field]||"Unknown"
+
+counts[key]=(counts[key]||0)+1
+
 })
 
 return counts
@@ -286,16 +199,20 @@ return counts
 
 function updateCharts(){
 
-updateChart(nameChart,countBy("name"))
-updateChart(repairChart,countBy("repaired"))
-updateChart(workChart,countBy("work"))
+updateChart(statusChart,countBy("Repaired status"))
+
+updateChart(deviceChart,countBy("Device Name"))
+
+updateChart(pcbChart,countBy("Type of PCB"))
 
 }
 
-function updateChart(chart,counts){
+function updateChart(chart,data){
 
-chart.data.labels=Object.keys(counts)
-chart.data.datasets[0].data=Object.values(counts)
+chart.data.labels=Object.keys(data)
+
+chart.data.datasets[0].data=Object.values(data)
+
 chart.update()
 
 }
@@ -303,29 +220,38 @@ chart.update()
 function createChart(id,label){
 
 return new Chart(document.getElementById(id),{
+
 type:"bar",
+
 data:{
 labels:[],
 datasets:[{
 label:label,
 data:[],
-backgroundColor:["#ff6384","#36a2eb","#ffce56","#4caf50","#9c27b0"]
+backgroundColor:[
+"#ff6384",
+"#36a2eb",
+"#ffce56",
+"#4caf50",
+"#9c27b0"
+]
 }]
 },
+
 options:{
 responsive:true,
 maintainAspectRatio:false
 }
+
 })
 
 }
 
-let nameChart=createChart("nameChart","Work By Name")
-let repairChart=createChart("repairChart","Repaired By")
-let workChart=createChart("workChart","Work Type")
+let statusChart=createChart("statusChart","Repair Status")
 
-loadData()
-updateCharts()
+let deviceChart=createChart("deviceChart","Device Name")
+
+let pcbChart=createChart("pcbChart","Type of PCB")
 
 </script>
 
