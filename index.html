@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Project Status Dashboard</title>
+
+<style>
+body{
+font-family:Arial;
+margin:40px;
+background:#f4f4f4;
+}
+
+input,select,button{
+padding:8px;
+margin:5px;
+}
+
+table{
+border-collapse:collapse;
+width:100%;
+background:white;
+}
+
+th,td{
+border:1px solid #ddd;
+padding:8px;
+}
+
+th{
+background:#333;
+color:white;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Project Status Dashboard</h2>
+
+<h3>Add Record</h3>
+
+<input type="date" id="date">
+
+<select id="type">
+<option>LPU</option>
+<option>Green PCB</option>
+<option>Camera</option>
+<option>IC Card</option>
+<option>Dashboard</option>
+<option>Display</option>
+</select>
+
+<input type="text" id="serial" placeholder="Serial No">
+
+<select id="status">
+<option>Working</option>
+<option>Not Working</option>
+<option>In Progress</option>
+</select>
+
+<select id="name">
+<option>Navya</option>
+<option>Shree</option>
+<option>Sravani</option>
+<option>Harshitha</option>
+<option>Saniya</option>
+<option>Sravya</option>
+</select>
+
+<input type="text" id="remarks" placeholder="Remarks">
+
+<button onclick="addRecord()">Add</button>
+
+<hr>
+
+<h3>Filters</h3>
+
+<input type="date" id="filterDate">
+
+<select id="filterName">
+<option value="">All</option>
+<option>Navya</option>
+<option>Shree</option>
+<option>Sravani</option>
+<option>Harshitha</option>
+<option>Saniya</option>
+<option>Sravya</option>
+</select>
+
+<button onclick="loadTable()">Apply Filter</button>
+
+<hr>
+
+<h3>Records</h3>
+
+<table id="table">
+<tr>
+<th>Date</th>
+<th>Type</th>
+<th>Serial</th>
+<th>Status</th>
+<th>Checked By</th>
+<th>Remarks</th>
+</tr>
+</table>
+
+<script>
+
+function getData(){
+return JSON.parse(localStorage.getItem("records")||"[]")
+}
+
+function saveData(data){
+localStorage.setItem("records",JSON.stringify(data))
+}
+
+function addRecord(){
+
+let data=getData()
+
+let record={
+date:date.value,
+type:type.value,
+serial:serial.value,
+status:status.value,
+name:name.value,
+remarks:remarks.value
+}
+
+data.push(record)
+
+saveData(data)
+
+loadTable()
+
+}
+
+function loadTable(){
+
+let data=getData()
+
+let fdate=filterDate.value
+let fname=filterName.value
+
+let table=document.getElementById("table")
+
+table.innerHTML=
+`<tr>
+<th>Date</th>
+<th>Type</th>
+<th>Serial</th>
+<th>Status</th>
+<th>Checked By</th>
+<th>Remarks</th>
+</tr>`
+
+data.forEach(r=>{
+
+if((!fdate||r.date==fdate)&&(!fname||r.name==fname)){
+
+table.innerHTML+=
+`<tr>
+<td>${r.date}</td>
+<td>${r.type}</td>
+<td>${r.serial}</td>
+<td>${r.status}</td>
+<td>${r.name}</td>
+<td>${r.remarks}</td>
+</tr>`
+
+}
+
+})
+
+}
+
+loadTable()
+
+</script>
+
+</body>
+</html>
