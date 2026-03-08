@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Project Dashboard</title>
+
+<title>Device Dashboard</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -9,88 +10,78 @@
 
 body{
 font-family:Arial;
-background:#f2f6ff;
-margin:40px;
+background:#f3f3f3;
+margin:20px;
 }
 
 h2{
-color:#333;
+margin-bottom:20px;
 }
 
-.container{
-display:flex;
-gap:40px;
+.dashboard{
+display:grid;
+grid-template-columns: 40% 60%;
+grid-gap:20px;
 }
 
 .chartbox{
-width:350px;
 background:white;
 padding:20px;
 border-radius:10px;
-box-shadow:0px 0px 10px #ccc;
+box-shadow:0 2px 8px rgba(0,0,0,0.1);
 }
 
-input,select,button{
-padding:8px;
-margin:5px;
-border-radius:5px;
-border:1px solid #ccc;
+.tablebox{
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 2px 8px rgba(0,0,0,0.1);
+height:400px;
+overflow:auto;
 }
 
-button{
-background:#4CAF50;
-color:white;
-border:none;
-cursor:pointer;
+.filters{
+margin-bottom:20px;
+}
+
+input,select{
+padding:6px;
+margin-right:10px;
 }
 
 table{
-border-collapse:collapse;
 width:100%;
-margin-top:20px;
-background:white;
+border-collapse:collapse;
 }
 
 th{
-background:#4CAF50;
+background:#1976d2;
 color:white;
-padding:10px;
+padding:8px;
 }
 
 td{
-padding:8px;
+padding:6px;
 border-bottom:1px solid #ddd;
 }
 
 </style>
+
 </head>
 
 <body>
 
 <h2>Project Status Dashboard</h2>
 
-<h3>Add Record</h3>
+<div class="filters">
 
-<input type="date" id="date">
+Date  
+<input type="date" id="dateFilter">
 
-<select id="type">
-<option>LPU</option>
-<option>Green PCB</option>
-<option>Camera</option>
-<option>IC Card</option>
-<option>Dashboard</option>
-<option>Display</option>
-</select>
+Checked By
 
-<input type="text" id="serial" placeholder="Serial No">
-
-<select id="status">
-<option>Working</option>
-<option>Not Working</option>
-<option>In Progress</option>
-</select>
-
-<select id="name">
+<select id="nameFilter">
+<option value="">All</option>
 <option>Navya</option>
 <option>Shree</option>
 <option>Sravani</option>
@@ -99,138 +90,100 @@ border-bottom:1px solid #ddd;
 <option>Sravya</option>
 </select>
 
-<input type="text" id="remarks" placeholder="Remarks">
+<button onclick="filterTable()">Filter</button>
 
-<button onclick="addRecord()">Add</button>
+</div>
 
-<hr>
-
-<div class="container">
+<div class="dashboard">
 
 <div class="chartbox">
-<canvas id="typeChart"></canvas>
+<h3>Count of Status by Type of Item</h3>
+<canvas id="pieChart"></canvas>
 </div>
 
-<div class="chartbox">
-<canvas id="statusChart"></canvas>
-</div>
+<div class="tablebox">
 
-</div>
+<table id="dataTable">
 
-<h3>Records</h3>
-
-<table id="table">
 <tr>
 <th>Date</th>
-<th>Type</th>
 <th>Serial</th>
+<th>Type</th>
 <th>Status</th>
 <th>Checked By</th>
-<th>Remarks</th>
 </tr>
+
+<tr>
+<td>2026-03-02</td>
+<td>27513</td>
+<td>Camera</td>
+<td>Working</td>
+<td>Navya</td>
+</tr>
+
+<tr>
+<td>2026-03-02</td>
+<td>27836</td>
+<td>LPU</td>
+<td>Not Working</td>
+<td>Sravani</td>
+</tr>
+
+<tr>
+<td>2026-03-02</td>
+<td>87347</td>
+<td>LPU</td>
+<td>Not Working</td>
+<td>Harshitha</td>
+</tr>
+
 </table>
+
+</div>
+
+</div>
 
 <script>
 
-function getData(){
-return JSON.parse(localStorage.getItem("records")||"[]")
-}
-
-function saveData(data){
-localStorage.setItem("records",JSON.stringify(data))
-}
-
-function addRecord(){
-
-let data=getData()
-
-let record={
-date:date.value,
-type:type.value,
-serial:serial.value,
-status:status.value,
-name:name.value,
-remarks:remarks.value
-}
-
-data.push(record)
-
-saveData(data)
-
-loadTable()
-drawCharts()
-
-}
-
-function loadTable(){
-
-let data=getData()
-
-let table=document.getElementById("table")
-
-table.innerHTML=`<tr>
-<th>Date</th>
-<th>Type</th>
-<th>Serial</th>
-<th>Status</th>
-<th>Checked By</th>
-<th>Remarks</th>
-</tr>`
-
-data.forEach(r=>{
-
-table.innerHTML+=`
-<tr>
-<td>${r.date}</td>
-<td>${r.type}</td>
-<td>${r.serial}</td>
-<td>${r.status}</td>
-<td>${r.name}</td>
-<td>${r.remarks}</td>
-</tr>`
-
-})
-
-}
-
-function drawCharts(){
-
-let data=getData()
-
-let typeCount={}
-let statusCount={}
-
-data.forEach(r=>{
-
-typeCount[r.type]=(typeCount[r.type]||0)+1
-statusCount[r.status]=(statusCount[r.status]||0)+1
-
-})
-
-new Chart(document.getElementById("typeChart"),{
-type:'doughnut',
+new Chart(document.getElementById("pieChart"),{
+type:"doughnut",
 data:{
-labels:Object.keys(typeCount),
+labels:["LPU","Green PCB","Camera","IC Card","Dashboard","Display"],
 datasets:[{
-data:Object.values(typeCount)
+data:[8,6,3,2,1,1],
+backgroundColor:[
+"#6a1b9a",
+"#1e88e5",
+"#fbc02d",
+"#e53935",
+"#ec407a",
+"#9575cd"
+]
 }]
 }
 })
 
-new Chart(document.getElementById("statusChart"),{
-type:'pie',
-data:{
-labels:Object.keys(statusCount),
-datasets:[{
-data:Object.values(statusCount)
-}]
-}
+function filterTable(){
+
+let date=document.getElementById("dateFilter").value
+let name=document.getElementById("nameFilter").value
+
+let rows=document.querySelectorAll("#dataTable tr")
+
+rows.forEach((row,i)=>{
+
+if(i==0)return
+
+let rdate=row.cells[0].innerText
+let rname=row.cells[4].innerText
+
+row.style.display=
+(!date||rdate==date)&&(!name||rname==name)
+?"":"none"
+
 })
 
 }
-
-loadTable()
-drawCharts()
 
 </script>
 
