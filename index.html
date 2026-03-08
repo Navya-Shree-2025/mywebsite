@@ -5,6 +5,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+
 body{
 font-family:Arial;
 background:#f4f6fb;
@@ -14,27 +15,54 @@ padding:20px;
 
 h1{
 text-align:center;
+margin-bottom:10px;
 }
 
 .container{
 display:flex;
-gap:20px;
+gap:15px;
 flex-wrap:wrap;
+justify-content:space-between;
 }
 
 .card{
 background:white;
-padding:20px;
-border-radius:10px;
-box-shadow:0 2px 8px rgba(0,0,0,0.1);
-flex:1;
-min-width:250px;
+border-radius:8px;
+padding:15px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+.form-card{
+width:100%;
+}
+
+.chart-card{
+width:300px;
+height:200px;
+}
+
+.chart-card canvas{
+width:100% !important;
+height:100% !important;
+}
+
+input,select{
+padding:6px;
+margin:4px;
+}
+
+button{
+padding:6px 12px;
+background:#3f51b5;
+color:white;
+border:none;
+cursor:pointer;
 }
 
 table{
 width:100%;
 border-collapse:collapse;
-margin-top:20px;
+margin-top:10px;
 background:white;
 }
 
@@ -49,27 +77,21 @@ background:#3f51b5;
 color:white;
 }
 
-input,select,button{
-padding:6px;
-margin:4px;
-}
-
-button{
-background:#3f51b5;
-color:white;
-border:none;
-cursor:pointer;
-}
-
 .tabs button{
-background:#eee;
+background:#ddd;
 color:black;
+margin-right:5px;
 }
 
 .tabs button.active{
 background:#3f51b5;
 color:white;
 }
+
+.filters{
+margin-top:10px;
+}
+
 </style>
 </head>
 
@@ -77,13 +99,12 @@ color:white;
 
 <h1>Repair Dashboard</h1>
 
-<div class="container">
+<div class="card form-card">
 
-<div class="card">
-<h3>Add Record</h3>
-
+Date
 <input type="date" id="date">
 
+Name
 <select id="name">
 <option>Navya Shree</option>
 <option>Sravani</option>
@@ -92,6 +113,7 @@ color:white;
 <option>Sravya</option>
 </select>
 
+Repaired By
 <select id="repaired">
 <option>Navya Shree</option>
 <option>Sravani</option>
@@ -100,6 +122,7 @@ color:white;
 <option>Sravya</option>
 </select>
 
+QC By
 <select id="qc">
 <option>Navya Shree</option>
 <option>Sravani</option>
@@ -108,27 +131,49 @@ color:white;
 <option>Sravya</option>
 </select>
 
+Work Done By
 <select id="work">
 <option>Repair</option>
 <option>Testing</option>
 <option>Assembly</option>
 </select>
 
-<input type="text" id="remarks" placeholder="Remarks">
+Checked By
+<select id="checked">
+<option>Navya Shree</option>
+<option>Sravani</option>
+<option>Harshitha</option>
+<option>Saniya</option>
+<option>Sravya</option>
+</select>
+
+Remarks
+<input type="text" id="remarks">
 
 <button onclick="addData()">Add</button>
 
 </div>
 
-<div class="card">
-<canvas id="chart"></canvas>
-</div>
-
-</div>
-
 <br>
 
-<div>
+<div class="container">
+
+<div class="card chart-card">
+<canvas id="nameChart"></canvas>
+</div>
+
+<div class="card chart-card">
+<canvas id="repairChart"></canvas>
+</div>
+
+<div class="card chart-card">
+<canvas id="workChart"></canvas>
+</div>
+
+</div>
+
+<div class="filters">
+
 Filter Date
 <input type="date" id="filterDate" onchange="loadData()">
 
@@ -141,29 +186,34 @@ Filter Name
 <option>Saniya</option>
 <option>Sravya</option>
 </select>
+
 </div>
 
 <br>
 
 <div class="tabs">
-<button onclick="showTab('all')" class="active">All</button>
-<button onclick="showTab('repaired')">Repaired By</button>
-<button onclick="showTab('qc')">QC By</button>
-<button onclick="showTab('work')">Work Done By</button>
+<button class="active">All</button>
+<button>Repaired By</button>
+<button>QC By</button>
+<button>Work Done By</button>
 </div>
 
-<table id="table">
+<table>
+
 <thead>
 <tr>
 <th>Date</th>
 <th>Name</th>
 <th>Repaired By</th>
 <th>QC By</th>
-<th>Work Done</th>
+<th>Work</th>
+<th>Checked By</th>
 <th>Remarks</th>
 </tr>
 </thead>
-<tbody></tbody>
+
+<tbody id="tableBody"></tbody>
+
 </table>
 
 <script>
@@ -178,6 +228,7 @@ name:document.getElementById("name").value,
 repaired:document.getElementById("repaired").value,
 qc:document.getElementById("qc").value,
 work:document.getElementById("work").value,
+checked:document.getElementById("checked").value,
 remarks:document.getElementById("remarks").value
 }
 
@@ -186,13 +237,13 @@ data.push(record)
 localStorage.setItem("repairData",JSON.stringify(data))
 
 loadData()
-updateChart()
+updateCharts()
 
 }
 
 function loadData(){
 
-let tbody=document.querySelector("#table tbody")
+let tbody=document.getElementById("tableBody")
 tbody.innerHTML=""
 
 let fDate=document.getElementById("filterDate").value
@@ -203,14 +254,17 @@ data.forEach(d=>{
 if(fDate && d.date!=fDate) return
 if(fName && d.name!=fName) return
 
-let row=`<tr>
+let row=`
+<tr>
 <td>${d.date}</td>
 <td>${d.name}</td>
 <td>${d.repaired}</td>
 <td>${d.qc}</td>
 <td>${d.work}</td>
+<td>${d.checked}</td>
 <td>${d.remarks}</td>
-</tr>`
+</tr>
+`
 
 tbody.innerHTML+=row
 
@@ -218,20 +272,27 @@ tbody.innerHTML+=row
 
 }
 
-function showTab(type){
-
-document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"))
-event.target.classList.add("active")
-
-}
-
-function updateChart(){
+function countBy(field){
 
 let counts={}
 
 data.forEach(d=>{
-counts[d.name]=(counts[d.name]||0)+1
+counts[d[field]]=(counts[d[field]]||0)+1
 })
+
+return counts
+
+}
+
+function updateCharts(){
+
+updateChart(nameChart,countBy("name"))
+updateChart(repairChart,countBy("repaired"))
+updateChart(workChart,countBy("work"))
+
+}
+
+function updateChart(chart,counts){
 
 chart.data.labels=Object.keys(counts)
 chart.data.datasets[0].data=Object.values(counts)
@@ -239,22 +300,32 @@ chart.update()
 
 }
 
-let ctx=document.getElementById("chart")
+function createChart(id,label){
 
-let chart=new Chart(ctx,{
+return new Chart(document.getElementById(id),{
 type:"bar",
 data:{
 labels:[],
 datasets:[{
-label:"Work Count",
+label:label,
 data:[],
 backgroundColor:["#ff6384","#36a2eb","#ffce56","#4caf50","#9c27b0"]
 }]
+},
+options:{
+responsive:true,
+maintainAspectRatio:false
 }
 })
 
+}
+
+let nameChart=createChart("nameChart","Work By Name")
+let repairChart=createChart("repairChart","Repaired By")
+let workChart=createChart("workChart","Work Type")
+
 loadData()
-updateChart()
+updateCharts()
 
 </script>
 
